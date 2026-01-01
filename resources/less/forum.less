@@ -1,0 +1,117 @@
+.MagicSlider-outer { width: 100%; }
+
+.MagicSlider-wrap { padding: 0; box-sizing: border-box; }
+
+.MagicSlider {
+  position: relative;
+  height: var(--ms-h-desktop);
+  overflow: hidden;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .MagicSlider { height: var(--ms-h-mobile); }
+}
+
+.MagicSlider-outer .container,
+.MagicSlider-outer .sideNavContainer,
+.MagicSlider-outer .sideNavOffset {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.MagicSlider-outer .container::before,
+.MagicSlider-outer .sideNavContainer::before {
+  display: none !important;
+  content: none !important;
+}
+
+@media (max-width: 768px) {
+  .MagicSlider-outer .container,
+  .MagicSlider-outer .sideNavOffset {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box;
+  }
+}
+
+.MagicSlider-track {
+  display: flex;
+  height: 100%;
+  transition: transform .35s ease;
+  will-change: transform;
+}
+
+.MagicSlide {
+  flex: 0 0 100%;
+  height: 100%;
+  background-position: center;
+  background-size: cover;
+}
+
+.MagicSlider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.35);
+  color: #fff;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 18px;
+  z-index: 3;
+}
+
+.MagicSlider-btn i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.MagicSlider-btn.prev { left: 12px; }
+.MagicSlider-btn.next { right: 12px; }
+
+.MagicSlider-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  gap: 6px;
+  z-index: 3;
+}
+
+.MagicSlider-dots .dot {
+  display: block;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.55);
+  cursor: pointer;
+}
+
+.MagicSlider-dots .dot.is-active { background: #fff; }
+
+@media (max-width: 768px) {
+  .MagicSlider-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .MagicSlider-dots { gap: 6px; }
+  .MagicSlider-dots .dot {
+    width: 6px;
+    height: 6px;
+  }
+}
