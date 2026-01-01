@@ -1,0 +1,170 @@
+.MagicSliderSettingsPage {
+  --ms-card-radius: 12px;
+  --ms-transition-speed: 180ms;
+}
+
+@media (max-width: 768px) {
+  .MagicSliderSettingsPage {
+    padding: 16px 12px;
+  }
+}
+
+.MagicSliderSettingsPage-content {
+  background: var(--body-bg, #fff);
+  border: 1px solid var(--control-bg, #e5e7eb);
+  border-radius: var(--ms-card-radius);
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .MagicSliderSettingsPage-content {
+    padding: 16px;
+  }
+}
+
+.MagicSlider-SettingsSection {
+  margin-bottom: 24px;
+  background: color-mix(in srgb, var(--control-bg, #e5e7eb) 25%, transparent);
+  border: 1px solid var(--control-bg, #e5e7eb);
+  border-radius: var(--ms-card-radius);
+  padding: 20px;
+}
+
+.MagicSlider-SettingsSection:last-child {
+  margin-bottom: 0;
+}
+
+.MagicSlider-SettingsSection > h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--control-bg, #e5e7eb);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-color, #111827);
+}
+
+.MagicSlider-SettingsSection > h3 i {
+  color: var(--primary-color, #6d28d9);
+  font-size: 18px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--primary-color, #6d28d9) 8%, transparent);
+  border-radius: 6px;
+}
+
+.MagicSlider-SettingsSection-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.MagicSliderSettingsPage .Form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.MagicSliderSettingsPage .Form-group .helpText {
+  font-size: 12px;
+  color: var(--muted-color, #6b7280);
+  margin-top: 6px;
+  line-height: 1.5;
+  padding-left: 10px;
+  border-left: 2px solid var(--control-bg, #e5e7eb);
+}
+
+.MagicSliderSettingsPage input[type="text"],
+.MagicSliderSettingsPage input[type="number"],
+.MagicSliderSettingsPage select,
+.MagicSliderSettingsPage textarea {
+  width: 100%;
+  max-width: 520px;
+  padding: 10px 14px;
+  border: 1px solid var(--control-bg, #e5e7eb);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--body-bg, #fff);
+  transition: border-color var(--ms-transition-speed) ease;
+}
+
+.MagicSliderSettingsPage input[type="number"] {
+  max-width: 180px;
+}
+
+.MagicSliderSettingsPage input[type="text"]:focus,
+.MagicSliderSettingsPage input[type="number"]:focus,
+.MagicSliderSettingsPage select:focus,
+.MagicSliderSettingsPage textarea:focus {
+  border-color: var(--primary-color, #6d28d9);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color, #6d28d9) 10%, transparent);
+}
+
+.MagicSlides-toolbar {
+  margin: 8px 0 12px;
+}
+
+.MagicSlides-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.MagicSlides-item {
+  display: grid;
+  grid-template-columns: 28px minmax(300px, 1fr) minmax(260px, 0.6fr) auto 110px;
+  gap: 10px;
+  align-items: center;
+  background: var(--body-bg, #fff);
+  border: 1px solid var(--control-bg, #e5e7eb);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.MagicSlides-item.is-dragging {
+  opacity: .6;
+}
+
+.MagicSlides-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: var(--muted-color, #6b7280);
+}
+
+.MagicSlides-link {
+  max-width: 520px;
+}
+
+.MagicSlides-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--primary-color, #6d28d9) 8%, transparent);
+  border: 1px solid var(--control-bg, #e5e7eb);
+}
+
+.MagicSlides-toggle.is-active {
+  background: color-mix(in srgb, var(--primary-color, #6d28d9) 18%, transparent);
+  border-color: color-mix(in srgb, var(--primary-color, #6d28d9) 35%, #e5e7eb);
+}
+
+.MagicSlides-toggle .icon,
+.MagicSlides-actions .Button .icon {
+  margin-right: 8px;
+}
+
+.MagicSlides-actions .Button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
