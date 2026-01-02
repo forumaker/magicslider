@@ -24,6 +24,10 @@ composer require forumaker/magicslider:"*"
 ```
 
 
+## ❗Important
+The extension previously released under the name `capybash` is no longer supported.
+
+
 ## 🔗 Links
 - [**GitHub Repository**](https://github.com/forumaker/magicslider)  
 - [**Packagist**](https://packagist.org/packages/forumaker/magicslider)  
