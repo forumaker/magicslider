@@ -1,9 +1,14 @@
 import app from 'flarum/admin/app';
 import ExtensionPage from 'flarum/admin/components/ExtensionPage';
 import Button from 'flarum/common/components/Button';
+import Switch from 'flarum/common/components/Switch';
 import icon from 'flarum/common/helpers/icon';
 
 type Slide = { image: string; link?: string; newTab?: boolean };
+
+function isTrue(v: unknown): boolean {
+  return v === true || v === 1 || v === '1' || v === 'true';
+}
 
 export default class MagicSliderSettingsPage extends ExtensionPage {
   slides: Slide[] = [];
@@ -11,10 +16,16 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
   oninit(vnode: any) {
     super.oninit(vnode);
     const raw = this.setting('forumaker-magicslider.slides')() || '[]';
-    try { this.slides = JSON.parse(raw); } catch { this.slides = []; }
+    try {
+      this.slides = JSON.parse(raw);
+    } catch {
+      this.slides = [];
+    }
   }
 
-  className() { return 'MagicSliderSettingsPage'; }
+  className() {
+    return 'MagicSliderSettingsPage';
+  }
 
   oncreate(vnode: any) {
     const list = vnode.dom.querySelector('.MagicSlides-list') as HTMLElement | null;
@@ -58,10 +69,12 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
   }
 
   content() {
+    const disableDesktop = isTrue(this.setting('forumaker-magicslider.disable_desktop')());
+    const disableMobile = isTrue(this.setting('forumaker-magicslider.disable_mobile')());
+
     return (
       <div className="MagicSliderSettingsPage">
         <div className="MagicSliderSettingsPage-content">
-
           <section className="MagicSlider-SettingsSection">
             <h3>
               <i className="fas fa-desktop" />
@@ -89,6 +102,20 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                 help: app.translator.trans('capy-magic-slider.admin.settings.radius_help'),
                 min: 0,
               })}
+
+              <div className="Form-group">
+                <div>
+                  <Switch
+                    state={disableDesktop}
+                    onchange={(v: boolean) => this.setting('forumaker-magicslider.disable_desktop')(v ? '1' : '0')}
+                  >
+                    {app.translator.trans('capy-magic-slider.admin.settings.disable_desktop')}
+                  </Switch>
+                </div>
+                <p className="helpText">
+                  {app.translator.trans('capy-magic-slider.admin.settings.disable_desktop_help')}
+                </p>
+              </div>
             </div>
           </section>
 
@@ -119,6 +146,20 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                 help: app.translator.trans('capy-magic-slider.admin.settings.radius_help'),
                 min: 0,
               })}
+
+              <div className="Form-group">
+                <div>
+                  <Switch
+                    state={disableMobile}
+                    onchange={(v: boolean) => this.setting('forumaker-magicslider.disable_mobile')(v ? '1' : '0')}
+                  >
+                    {app.translator.trans('capy-magic-slider.admin.settings.disable_mobile')}
+                  </Switch>
+                </div>
+                <p className="helpText">
+                  {app.translator.trans('capy-magic-slider.admin.settings.disable_mobile_help')}
+                </p>
+              </div>
             </div>
           </section>
 
@@ -175,7 +216,10 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                         type="text"
                         placeholder={app.translator.trans('capy-magic-slider.admin.settings.image_placeholder')}
                         value={s.image}
-                        oninput={(e: any) => { s.image = e.target.value; this.syncSlides(); }}
+                        oninput={(e: any) => {
+                          s.image = e.target.value;
+                          this.syncSlides();
+                        }}
                       />
 
                       <input
@@ -183,12 +227,18 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                         type="text"
                         placeholder={app.translator.trans('capy-magic-slider.admin.settings.link_placeholder')}
                         value={s.link || ''}
-                        oninput={(e: any) => { s.link = e.target.value; this.syncSlides(); }}
+                        oninput={(e: any) => {
+                          s.link = e.target.value;
+                          this.syncSlides();
+                        }}
                       />
 
                       <Button
                         className={'Button MagicSlides-toggle' + (s.newTab ? ' is-active' : '')}
-                        onclick={() => { s.newTab = !s.newTab; this.syncSlides(); }}
+                        onclick={() => {
+                          s.newTab = !s.newTab;
+                          this.syncSlides();
+                        }}
                       >
                         {icon('fas fa-external-link-alt')}
                         <span>{app.translator.trans('capy-magic-slider.admin.settings.new_tab')}</span>
