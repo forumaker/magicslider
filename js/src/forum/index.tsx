@@ -12,6 +12,20 @@ function isTrue(v: unknown): boolean {
   return v === true || v === 1 || v === '1' || v === 'true';
 }
 
+function getBool(key: string): boolean {
+  const value = app.forum.attribute(key);
+  if (value === undefined || value === null) return false;
+  return isTrue(value);
+}
+
+function isMobileViewport(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    !!window.matchMedia &&
+    window.matchMedia('(max-width: 768px)').matches
+  );
+}
+
 function isSingleTagPage(): boolean {
   const cur = (app as any).current;
 
@@ -24,9 +38,17 @@ function isSingleTagPage(): boolean {
 }
 
 function buildSlider() {
-  const hideOnTags = isTrue(app.forum.attribute('forumaker-magicslider.hide_on_tag_pages'));
+  if (getBool('forumaker-magicslider.hide_on_tag_pages') && isSingleTagPage()) {
+    return null;
+  }
 
-  if (hideOnTags && isSingleTagPage()) return null;
+  const disableMobile = getBool('forumaker-magicslider.disable_mobile');
+  const disableDesktop = getBool('forumaker-magicslider.disable_desktop');
+  const mobile = isMobileViewport();
+
+  if ((mobile && disableMobile) || (!mobile && disableDesktop)) {
+    return null;
+  }
 
   const raw = app.forum.attribute<string>('forumaker-magicslider.slides') || '[]';
 
@@ -53,8 +75,12 @@ function buildSlider() {
   const paddingMobile = Number(app.forum.attribute('forumaker-magicslider.padding_mobile') || 0);
   const radiusDesktop = Number(app.forum.attribute('forumaker-magicslider.radius_desktop') || 0);
   const radiusMobile = Number(app.forum.attribute('forumaker-magicslider.radius_mobile') || 0);
-  const autoplay = Number(app.forum.attribute('forumaker-magicslider.autoplay') || 0);
-  const fitToLayout = isTrue(app.forum.attribute('forumaker-magicslider.fit_to_layout'));
+
+  // NOW IN SECONDS:
+  const autoplaySeconds = Number(app.forum.attribute('forumaker-magicslider.autoplay') || 0);
+  const autoplayMs = autoplaySeconds > 0 ? autoplaySeconds * 1000 : 0;
+
+  const fitToLayout = getBool('forumaker-magicslider.fit_to_layout');
 
   return (
     <MagicSlider
@@ -65,7 +91,7 @@ function buildSlider() {
       paddingMobile={paddingMobile}
       radiusDesktop={radiusDesktop}
       radiusMobile={radiusMobile}
-      autoplayMs={autoplay}
+      autoplayMs={autoplayMs}
       fitToLayout={fitToLayout}
     />
   );

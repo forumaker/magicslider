@@ -27,6 +27,10 @@ return [
         ->default('forumaker-magicslider.hide_on_tag_pages', '0')
         ->default('forumaker-magicslider.fit_to_layout', '0')
 
+        // NEW:
+        ->default('forumaker-magicslider.disable_mobile', '0')
+        ->default('forumaker-magicslider.disable_desktop', '0')
+
         ->serializeToForum('forumaker-magicslider.slides', 'forumaker-magicslider.slides', 'strval')
         ->serializeToForum('forumaker-magicslider.height_desktop', 'forumaker-magicslider.height_desktop', 'intval')
         ->serializeToForum('forumaker-magicslider.height_mobile', 'forumaker-magicslider.height_mobile', 'intval')
@@ -36,5 +40,9 @@ return [
         ->serializeToForum('forumaker-magicslider.radius_mobile', 'forumaker-magicslider.radius_mobile', 'intval')
         ->serializeToForum('forumaker-magicslider.autoplay', 'forumaker-magicslider.autoplay', 'intval')
         ->serializeToForum('forumaker-magicslider.hide_on_tag_pages', 'forumaker-magicslider.hide_on_tag_pages', 'boolval')
-        ->serializeToForum('forumaker-magicslider.fit_to_layout', 'forumaker-magicslider.fit_to_layout', 'boolval'),
+        ->serializeToForum('forumaker-magicslider.fit_to_layout', 'forumaker-magicslider.fit_to_layout', 'boolval')
+
+        // NEW:
+        ->serializeToForum('forumaker-magicslider.disable_mobile', 'forumaker-magicslider.disable_mobile', 'boolval')
+        ->serializeToForum('forumaker-magicslider.disable_desktop', 'forumaker-magicslider.disable_desktop', 'boolval'),
 ];
