@@ -87,6 +87,14 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
     }
   }
 
+  private slideLinkLabel(i: number, total: number, hasLink: boolean) {
+    return hasLink ? `Open slide ${i + 1} of ${total}` : `Slide ${i + 1} of ${total}`;
+  }
+
+  private slideButtonLabel(i: number, active: boolean) {
+    return active ? `Current slide ${i + 1}` : `Go to slide ${i + 1}`;
+  }
+
   private viewInner(vnode: any) {
     const {
       slides,
@@ -119,16 +127,19 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
           }}
           onpointerdown={(e: any) => this.onPointerDown(e)}
           onpointerup={(e: any) => this.onPointerUp(e, slides.length)}
+          aria-label="Homepage slider"
         >
           <div className="MagicSlider-track" style={{ transform: `translateX(${offsetPct}%)` }}>
             {slides.map((s: Slide, i: number) => {
               const isFirst = i === 0;
+              const label = this.slideLinkLabel(i, slides.length, !!s.link);
 
               const image = (
                 <img
                   className="MagicSlide-image"
                   src={s.image}
                   alt=""
+                  aria-hidden="true"
                   draggable={false}
                   fetchpriority={isFirst ? 'high' : 'low'}
                   loading={isFirst ? 'eager' : 'lazy'}
@@ -144,6 +155,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
                     href={s.link}
                     target={s.newTab ? '_blank' : '_self'}
                     rel={s.newTab ? 'noopener noreferrer' : undefined}
+                    aria-label={label}
                   >
                     {image}
                   </a>
@@ -151,7 +163,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
               }
 
               return (
-                <div key={i} className="MagicSlide" aria-hidden="true">
+                <div key={i} className="MagicSlide" aria-label={label}>
                   {image}
                 </div>
               );
@@ -188,22 +200,26 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
                 </span>
               </button>
 
-              <div className="MagicSlider-dots" role="tablist" aria-label="Slider pagination">
-                {slides.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className={'dot' + (this.index === i ? ' is-active' : '')}
-                    aria-label={`Slide ${i + 1}`}
-                    aria-current={this.index === i ? 'true' : 'false'}
-                    onclick={() => {
-                      this.index = i;
-                      m.redraw();
-                    }}
-                  >
-                    <span className="dotInner" />
-                  </button>
-                ))}
+              <div className="MagicSlider-dots" aria-label="Slider pagination">
+                {slides.map((_, i) => {
+                  const isActive = this.index === i;
+
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      className={'dot' + (isActive ? ' is-active' : '')}
+                      aria-label={this.slideButtonLabel(i, isActive)}
+                      aria-current={isActive ? 'true' : 'false'}
+                      onclick={() => {
+                        this.index = i;
+                        m.redraw();
+                      }}
+                    >
+                      <span className="dotInner" aria-hidden="true" />
+                    </button>
+                  );
+                })}
               </div>
             </>
           )}
