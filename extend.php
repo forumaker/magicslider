@@ -3,17 +3,49 @@
 namespace forumaker\MagicSlider;
 
 use Flarum\Extend;
+use Flarum\Settings\SettingsRepositoryInterface;
+use forumaker\MagicSlider\Api\Controller\UploadSlideImageController;
 
 return [
     new Extend\Locales(__DIR__ . '/resources/locale'),
 
     (new Extend\Frontend('forum'))
         ->css(__DIR__ . '/resources/less/forum.less')
-        ->js(__DIR__ . '/js/dist/forum.js'),
+        ->js(__DIR__ . '/js/dist/forum.js')
+        ->preloads(function () {
+            $raw = resolve(SettingsRepositoryInterface::class)->get('forumaker-magicslider.slides', '[]');
+
+            try {
+                $slides = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\Throwable $e) {
+                return [];
+            }
+
+            if (!is_array($slides)) {
+                return [];
+            }
+
+            foreach ($slides as $slide) {
+                $image = trim((string) ($slide['image'] ?? ''));
+
+                if ($image !== '') {
+                    return [[
+                        'href' => $image,
+                        'as' => 'image',
+                        'fetchpriority' => 'high',
+                    ]];
+                }
+            }
+
+            return [];
+        }),
 
     (new Extend\Frontend('admin'))
         ->css(__DIR__ . '/resources/less/admin.less')
         ->js(__DIR__ . '/js/dist/admin.js'),
+
+    (new Extend\Routes('api'))
+        ->post('/forumaker/magicslider/upload', 'forumaker.magicslider.upload', UploadSlideImageController::class),
 
     (new Extend\Settings())
         ->default('forumaker-magicslider.slides', '[]')
@@ -26,8 +58,6 @@ return [
         ->default('forumaker-magicslider.autoplay', '0')
         ->default('forumaker-magicslider.hide_on_tag_pages', '0')
         ->default('forumaker-magicslider.fit_to_layout', '0')
-
-        // NEW:
         ->default('forumaker-magicslider.disable_mobile', '0')
         ->default('forumaker-magicslider.disable_desktop', '0')
 
@@ -41,8 +71,6 @@ return [
         ->serializeToForum('forumaker-magicslider.autoplay', 'forumaker-magicslider.autoplay', 'intval')
         ->serializeToForum('forumaker-magicslider.hide_on_tag_pages', 'forumaker-magicslider.hide_on_tag_pages', 'boolval')
         ->serializeToForum('forumaker-magicslider.fit_to_layout', 'forumaker-magicslider.fit_to_layout', 'boolval')
-
-        // NEW:
         ->serializeToForum('forumaker-magicslider.disable_mobile', 'forumaker-magicslider.disable_mobile', 'boolval')
         ->serializeToForum('forumaker-magicslider.disable_desktop', 'forumaker-magicslider.disable_desktop', 'boolval'),
 ];

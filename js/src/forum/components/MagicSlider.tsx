@@ -1,6 +1,3 @@
-import app from 'flarum/forum/app';
-import { override } from 'flarum/common/extend';
-import IndexPage from 'flarum/forum/components/IndexPage';
 import Component, { ComponentAttrs } from 'flarum/common/Component';
 
 type Slide = { image: string; link?: string; newTab?: boolean };
@@ -30,6 +27,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
 
   oncreate(vnode: any) {
     const ms = Number(vnode.attrs.autoplayMs || 0);
+
     if (vnode.attrs.slides.length > 1 && ms > 0) {
       this.interval = window.setInterval(() => {
         this.next(vnode.attrs.slides.length);
@@ -43,7 +41,10 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
         this.isMobile = !!this.mq?.matches;
         m.redraw();
       };
-      this.mq.addEventListener ? this.mq.addEventListener('change', this.mqHandler) : this.mq.addListener(this.mqHandler);
+
+      this.mq.addEventListener
+        ? this.mq.addEventListener('change', this.mqHandler)
+        : this.mq.addListener(this.mqHandler);
     }
   }
 
@@ -52,8 +53,12 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
       window.clearInterval(this.interval);
       this.interval = undefined;
     }
+
     if (this.mq && this.mqHandler) {
-      this.mq.removeEventListener ? this.mq.removeEventListener('change', this.mqHandler) : this.mq.removeListener(this.mqHandler);
+      this.mq.removeEventListener
+        ? this.mq.removeEventListener('change', this.mqHandler)
+        : this.mq.removeListener(this.mqHandler);
+
       this.mqHandler = undefined;
     }
   }
@@ -61,6 +66,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
   private next(len: number) {
     this.index = (this.index + 1) % len;
   }
+
   private prev(len: number) {
     this.index = (this.index - 1 + len) % len;
   }
@@ -68,10 +74,13 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
   private onPointerDown(e: PointerEvent) {
     this.touchStartX = e.clientX ?? 0;
   }
+
   private onPointerUp(e: PointerEvent, len: number) {
     if (this.touchStartX === null) return;
+
     const dx = (e.clientX ?? 0) - this.touchStartX;
     this.touchStartX = null;
+
     if (Math.abs(dx) > 40) {
       dx < 0 ? this.next(len) : this.prev(len);
       m.redraw();
@@ -79,9 +88,21 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
   }
 
   private viewInner(vnode: any) {
-    const { slides, heightDesktop, heightMobile, paddingDesktop, paddingMobile, radiusDesktop, radiusMobile } = vnode.attrs;
+    const {
+      slides,
+      heightDesktop,
+      heightMobile,
+      paddingDesktop,
+      paddingMobile,
+      radiusDesktop,
+      radiusMobile,
+    } = vnode.attrs;
 
     if (!slides.length) return null;
+
+    if (this.index >= slides.length) {
+      this.index = 0;
+    }
 
     const offsetPct = -(this.index * 100);
     const pad = this.isMobile ? paddingMobile : paddingDesktop;
@@ -100,39 +121,88 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
           onpointerup={(e: any) => this.onPointerUp(e, slides.length)}
         >
           <div className="MagicSlider-track" style={{ transform: `translateX(${offsetPct}%)` }}>
-            {slides.map((s: Slide, i: number) => (
-              <a
-                key={i}
-                className="MagicSlide"
-                href={s.link || '#'}
-                target={s.link ? (s.newTab ? '_blank' : '_self') : undefined}
-                rel={s.link && s.newTab ? 'noopener' : undefined}
-                style={{ backgroundImage: `url('${s.image}')` }}
-                onclick={(e: MouseEvent) => {
-                  if (!s.link) e.preventDefault();
-                }}
-              />
-            ))}
+            {slides.map((s: Slide, i: number) => {
+              const isFirst = i === 0;
+
+              const image = (
+                <img
+                  className="MagicSlide-image"
+                  src={s.image}
+                  alt=""
+                  draggable={false}
+                  fetchpriority={isFirst ? 'high' : 'low'}
+                  loading={isFirst ? 'eager' : 'lazy'}
+                  decoding="async"
+                />
+              );
+
+              if (s.link) {
+                return (
+                  <a
+                    key={i}
+                    className="MagicSlide"
+                    href={s.link}
+                    target={s.newTab ? '_blank' : '_self'}
+                    rel={s.newTab ? 'noopener noreferrer' : undefined}
+                  >
+                    {image}
+                  </a>
+                );
+              }
+
+              return (
+                <div key={i} className="MagicSlide" aria-hidden="true">
+                  {image}
+                </div>
+              );
+            })}
           </div>
 
           {slides.length > 1 && (
             <>
-              <button className="MagicSlider-btn prev" aria-label="Previous" onclick={() => this.prev(slides.length)}>
-                <i className="fas fa-chevron-left"></i>
+              <button
+                type="button"
+                className="MagicSlider-btn prev"
+                aria-label="Previous slide"
+                onclick={() => {
+                  this.prev(slides.length);
+                  m.redraw();
+                }}
+              >
+                <span className="MagicSlider-btnVisual">
+                  <i className="fas fa-chevron-left" />
+                </span>
               </button>
-              <button className="MagicSlider-btn next" aria-label="Next" onclick={() => this.next(slides.length)}>
-                <i className="fas fa-chevron-right"></i>
+
+              <button
+                type="button"
+                className="MagicSlider-btn next"
+                aria-label="Next slide"
+                onclick={() => {
+                  this.next(slides.length);
+                  m.redraw();
+                }}
+              >
+                <span className="MagicSlider-btnVisual">
+                  <i className="fas fa-chevron-right" />
+                </span>
               </button>
-              <div className="MagicSlider-dots">
+
+              <div className="MagicSlider-dots" role="tablist" aria-label="Slider pagination">
                 {slides.map((_, i) => (
                   <button
                     key={i}
+                    type="button"
                     className={'dot' + (this.index === i ? ' is-active' : '')}
                     aria-label={`Slide ${i + 1}`}
+                    aria-current={this.index === i ? 'true' : 'false'}
                     onclick={() => {
                       this.index = i;
+                      m.redraw();
                     }}
-                  />
+                  >
+                    <span className="dotInner" />
+                  </button>
                 ))}
               </div>
             </>
@@ -144,6 +214,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
 
   view(vnode: any) {
     const { fitToLayout } = vnode.attrs;
+
     if (fitToLayout) {
       return (
         <div className="MagicSlider-outer">
@@ -153,6 +224,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
         </div>
       );
     }
+
     return this.viewInner(vnode);
   }
 }

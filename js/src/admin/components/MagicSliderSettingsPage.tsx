@@ -11,10 +11,13 @@ function isTrue(v: unknown): boolean {
 
 export default class MagicSliderSettingsPage extends ExtensionPage {
   slides: Slide[] = [];
+  uploadingIndex: number | null = null;
 
   oninit(vnode: any) {
     super.oninit(vnode);
+
     const raw = this.setting('forumaker-magicslider.slides')() || '[]';
+
     try {
       this.slides = JSON.parse(raw);
     } catch {
@@ -35,6 +38,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
     list.addEventListener('dragstart', (e: any) => {
       const t = (e.target as HTMLElement).closest('.MagicSlides-item') as HTMLElement | null;
       if (!t) return;
+
       dragEl = t;
       e.dataTransfer.effectAllowed = 'move';
       t.classList.add('is-dragging');
@@ -47,24 +51,63 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
 
     list.addEventListener('dragover', (e) => {
       e.preventDefault();
+
       const over = (e.target as HTMLElement).closest('.MagicSlides-item') as HTMLElement | null;
       if (!dragEl || !over || over === dragEl) return;
+
       const rect = over.getBoundingClientRect();
       const after = (e as MouseEvent).clientY - rect.top > rect.height / 2;
+
       over.parentElement?.insertBefore(dragEl, after ? over.nextSibling : over);
     });
 
     list.addEventListener('drop', () => {
       const newOrder: Slide[] = [];
       const items = list.querySelectorAll('.MagicSlides-item');
+
       items.forEach((el: any) => {
         const i = Number(el.dataset.index);
         const s = this.slides[i];
         if (s) newOrder.push(s);
       });
+
       this.slides = newOrder;
       this.syncSlides();
     });
+  }
+
+  async uploadImage(file: File, slide: Slide, index: number) {
+    this.uploadingIndex = index;
+    m.redraw();
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const apiUrl = ((app as any).data?.apiUrl || '/api').replace(/\/$/, '');
+
+      const response = await app.request<{ data?: { url?: string } }>({
+        method: 'POST',
+        url: `${apiUrl}/forumaker/magicslider/upload`,
+        body: formData,
+        serialize: (body: any) => body,
+      });
+
+      const url = response?.data?.url;
+
+      if (url) {
+        slide.image = url;
+        this.syncSlides();
+      } else {
+        throw new Error('Upload completed but no URL returned');
+      }
+    } catch (error) {
+      console.error(error);
+      app.alerts.show({ type: 'error' }, 'Could not upload image');
+    } finally {
+      this.uploadingIndex = null;
+      m.redraw();
+    }
   }
 
   content() {
@@ -79,6 +122,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
               <i className="fas fa-desktop" />
               {app.translator.trans('capy-magic-slider.admin.settings.section_desktop')}
             </h3>
+
             <div className="MagicSlider-SettingsSection-content">
               {this.buildSettingComponent({
                 type: 'number',
@@ -87,6 +131,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                 help: app.translator.trans('capy-magic-slider.admin.settings.height_help'),
                 min: 100,
               })}
+
               {this.buildSettingComponent({
                 type: 'number',
                 setting: 'forumaker-magicslider.padding_desktop',
@@ -94,6 +139,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                 help: app.translator.trans('capy-magic-slider.admin.settings.padding_help'),
                 min: 0,
               })}
+
               {this.buildSettingComponent({
                 type: 'number',
                 setting: 'forumaker-magicslider.radius_desktop',
@@ -111,6 +157,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                     {app.translator.trans('capy-magic-slider.admin.settings.disable_desktop')}
                   </Switch>
                 </div>
+
                 <p className="helpText">
                   {app.translator.trans('capy-magic-slider.admin.settings.disable_desktop_help')}
                 </p>
@@ -123,6 +170,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
               <i className="fas fa-mobile-alt" />
               {app.translator.trans('capy-magic-slider.admin.settings.section_mobile')}
             </h3>
+
             <div className="MagicSlider-SettingsSection-content">
               {this.buildSettingComponent({
                 type: 'number',
@@ -131,6 +179,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                 help: app.translator.trans('capy-magic-slider.admin.settings.height_help'),
                 min: 100,
               })}
+
               {this.buildSettingComponent({
                 type: 'number',
                 setting: 'forumaker-magicslider.padding_mobile',
@@ -138,6 +187,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                 help: app.translator.trans('capy-magic-slider.admin.settings.padding_help'),
                 min: 0,
               })}
+
               {this.buildSettingComponent({
                 type: 'number',
                 setting: 'forumaker-magicslider.radius_mobile',
@@ -155,6 +205,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                     {app.translator.trans('capy-magic-slider.admin.settings.disable_mobile')}
                   </Switch>
                 </div>
+
                 <p className="helpText">
                   {app.translator.trans('capy-magic-slider.admin.settings.disable_mobile_help')}
                 </p>
@@ -167,6 +218,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
               <i className="fas fa-cog" />
               {app.translator.trans('capy-magic-slider.admin.settings.section_behavior')}
             </h3>
+
             <div className="MagicSlider-SettingsSection-content">
               {this.buildSettingComponent({
                 type: 'number',
@@ -175,12 +227,14 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                 help: app.translator.trans('capy-magic-slider.admin.settings.autoplay_help'),
                 min: 0,
               })}
+
               {this.buildSettingComponent({
                 type: 'boolean',
                 setting: 'forumaker-magicslider.hide_on_tag_pages',
                 label: app.translator.trans('capy-magic-slider.admin.settings.hide_on_tag_pages'),
                 help: app.translator.trans('capy-magic-slider.admin.settings.hide_on_tag_pages_help'),
               })}
+
               {this.buildSettingComponent({
                 type: 'boolean',
                 setting: 'forumaker-magicslider.fit_to_layout',
@@ -195,6 +249,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
               <i className="fas fa-sliders-h" />
               {app.translator.trans('capy-magic-slider.admin.settings.section_slides')}
             </h3>
+
             <div className="MagicSlider-SettingsSection-content">
               <div className="Form-group">
                 <div className="MagicSlides-toolbar">
@@ -206,7 +261,10 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                 <div className="MagicSlides-list">
                   {this.slides.map((s, i) => (
                     <div key={i} className="MagicSlides-item" data-index={i} draggable="true">
-                      <span className="MagicSlides-handle" title={app.translator.trans('capy-magic-slider.admin.settings.drag')}>
+                      <span
+                        className="MagicSlides-handle"
+                        title={app.translator.trans('capy-magic-slider.admin.settings.drag')}
+                      >
                         <i className="fas fa-grip-vertical" />
                       </span>
 
@@ -220,6 +278,27 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                           this.syncSlides();
                         }}
                       />
+
+                      <div className="MagicSlides-upload">
+                        <label className="Button">
+                          <i className="fas fa-upload" />
+                          <span>{this.uploadingIndex === i ? 'Uploading...' : 'Upload image'}</span>
+
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={this.uploadingIndex === i}
+                            onchange={(e: any) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                this.uploadImage(file, s, i);
+                              }
+                              e.target.value = '';
+                            }}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                      </div>
 
                       <input
                         className="FormControl MagicSlides-link"
