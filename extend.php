@@ -5,6 +5,7 @@ namespace forumaker\MagicSlider;
 use Flarum\Extend;
 use Flarum\Settings\SettingsRepositoryInterface;
 use forumaker\MagicSlider\Api\Controller\UploadSlideImageController;
+use Psr\Log\LoggerInterface;
 
 return [
     new Extend\Locales(__DIR__ . '/resources/locale'),
@@ -18,6 +19,7 @@ return [
             try {
                 $slides = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
             } catch (\Throwable $e) {
+                resolve(LoggerInterface::class)->warning('[forumaker-magicslider] Failed to parse slides JSON: ' . $e->getMessage());
                 return [];
             }
 

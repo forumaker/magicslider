@@ -81,6 +81,14 @@ class UploadSlideImageController implements RequestHandlerInterface
             $node->parentNode?->removeChild($node);
         }
 
+        foreach ($xpath->query('//*[local-name()="style"]') as $node) {
+            $node->parentNode?->removeChild($node);
+        }
+
+        foreach ($xpath->query('//*[local-name()="foreignObject"]') as $node) {
+            $node->parentNode?->removeChild($node);
+        }
+
         foreach ($xpath->query('//@*[starts-with(local-name(), "on")]') as $attr) {
             $attr->ownerElement?->removeAttributeNode($attr);
         }
