@@ -1,0 +1,46 @@
+{
+  "name": "forumaker/magicslider",
+  "description": "MagicSlider replaces the WelcomeHero with a configurable image slider",
+  "type": "flarum-extension",
+  "keywords": ["flarum", "flarum-extension", "slider", "banner", "hero", "image", "magic"],
+  "license": "MIT",
+  "homepage": "https://github.com/forumaker/magicslider",
+  "support": {
+    "issues": "https://github.com/forumaker/magicslider/issues",
+    "source": "https://github.com/forumaker/magicslider",
+    "forum": "https://discuss.flarum.org/d/38302-magicslider-smooth-and-customizable-hero-slider"
+  },
+  "authors": [
+    {
+      "name": "forumaker",
+      "role": "Developer",
+      "homepage": "https://github.com/forumaker"
+    }
+  ],
+  "require": {
+    "php": ">=8.0",
+    "flarum/core": "^1.8"
+  },
+  "autoload": {
+    "psr-4": {
+      "forumaker\\MagicSlider\\": "src/"
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-2.x": "1.x-dev"
+    },
+    "flarum-extension": {
+      "title": "Magic Slider",
+      "category": "feature",
+      "icon": {
+        "name": "fas fa-hand-sparkles",
+        "backgroundColor": "#6A5ACD",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
