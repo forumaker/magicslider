@@ -1,5 +1,5 @@
 # ✨ MagicSlider for Flarum
-Rereplaces the WelcomeHero with a configurable image slider. **Supports Flarum 1.x and 2.x**
+Replaces the WelcomeHero with a configurable image slider. **Supports Flarum 1.x and 2.x**
 
 
 ## 🚀 Features
