@@ -1,6 +1,7 @@
 # ✨ MagicSlider for Flarum
 Replaces the WelcomeHero with a configurable image slider. **Supports Flarum 1.x and 2.x**
 
+![License](https://img.shields.io/badge/license-MIT-blue) ![Packagist Version](https://img.shields.io/packagist/v/forumaker/magicslider) ![Downloads](https://img.shields.io/packagist/dt/forumaker/magicslider)
 
 ## 🚀 Features
 - ⏱️ Optional autoplay
