@@ -4,6 +4,8 @@ namespace forumaker\MagicSlider\Api\Controller;
 
 use Flarum\Http\RequestUtil;
 use Flarum\Http\UrlGenerator;
+use forumaker\MagicSlider\Support\SlideAssetPath;
+use forumaker\MagicSlider\Support\SvgSanitizer;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
@@ -24,7 +26,8 @@ class UploadSlideImageController implements RequestHandlerInterface
 
     public function __construct(
         protected FilesystemFactory $filesystem,
-        protected UrlGenerator $url
+        protected UrlGenerator $url,
+        protected SvgSanitizer $svgSanitizer
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -56,52 +59,15 @@ class UploadSlideImageController implements RequestHandlerInterface
         $ext = self::ALLOWED_MIMES[$mime];
 
         if ($mime === 'image/svg+xml') {
-            $contents = $this->sanitizeSvg($contents);
+            $contents = $this->svgSanitizer->sanitize($contents);
         }
 
-        $filename = 'magicslider/' . bin2hex(random_bytes(16)) . '.' . $ext;
+        $filename = SlideAssetPath::generate($ext);
 
         $this->filesystem->disk('flarum-assets')->put($filename, $contents);
 
         $url = rtrim($this->url->to('forum')->base(), '/') . '/assets/' . $filename;
 
         return new JsonResponse(['data' => ['url' => $url]]);
-    }
-
-    private function sanitizeSvg(string $svg): string
-    {
-        $doc = new \DOMDocument();
-        libxml_use_internal_errors(true);
-        $doc->loadXML($svg, LIBXML_NONET);
-        libxml_clear_errors();
-
-        $xpath = new \DOMXPath($doc);
-
-        foreach ($xpath->query('//*[local-name()="script"]') as $node) {
-            $node->parentNode?->removeChild($node);
-        }
-
-        foreach ($xpath->query('//*[local-name()="style"]') as $node) {
-            $node->parentNode?->removeChild($node);
-        }
-
-        foreach ($xpath->query('//*[local-name()="foreignObject"]') as $node) {
-            $node->parentNode?->removeChild($node);
-        }
-
-        foreach ($xpath->query('//@*[starts-with(local-name(), "on")]') as $attr) {
-            $attr->ownerElement?->removeAttributeNode($attr);
-        }
-
-        foreach ($xpath->query('//@href[starts-with(normalize-space(.), "javascript:")]') as $attr) {
-            $attr->ownerElement?->removeAttributeNode($attr);
-        }
-
-        $xpath->registerNamespace('xlink', 'http://www.w3.org/1999/xlink');
-        foreach ($xpath->query('//@xlink:href[starts-with(normalize-space(.), "javascript:")]') as $attr) {
-            $attr->ownerElement?->removeAttributeNode($attr);
-        }
-
-        return $doc->saveXML() ?: $svg;
     }
 }

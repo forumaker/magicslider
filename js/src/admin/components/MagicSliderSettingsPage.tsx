@@ -2,8 +2,21 @@ import app from 'flarum/admin/app';
 import ExtensionPage from 'flarum/admin/components/ExtensionPage';
 import Button from 'flarum/common/components/Button';
 import Switch from 'flarum/common/components/Switch';
+import saveSettings from 'flarum/admin/utils/saveSettings';
 
-type Slide = { image: string; link?: string; newTab?: boolean };
+// `id` is a real, persisted part of a slide's data now (unlike the old
+// client-only sequence number this used to carry) — it's the primary key
+// RecordSlideClickController/GetSlideClicksController key click counts
+// against, so it has to survive edits, reordering, and reloads, not just
+// last long enough for one Mithril `key`/drag session. Slides saved before
+// this existed get one backfilled on load (see oninit) and immediately
+// persisted, so the very first click after an upgrade already has
+// somewhere to land.
+type Slide = { id: string; image: string; link?: string; newTab?: boolean };
+
+function genId(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
 
 function isTrue(v: unknown): boolean {
   return v === true || v === 1 || v === '1' || v === 'true';
@@ -11,84 +24,122 @@ function isTrue(v: unknown): boolean {
 
 export default class MagicSliderSettingsPage extends ExtensionPage {
   slides: Slide[] = [];
-  uploadingIndex: number | null = null;
+  clicks: Record<string, number> = {};
+  uploadingId: string | null = null;
+  dragIndex: number | null = null;
 
   oninit(vnode: any) {
     super.oninit(vnode);
 
     const raw = this.setting('forumaker-magicslider.slides')() || '[]';
+    let parsed: Partial<Slide>[] = [];
 
     try {
-      this.slides = JSON.parse(raw);
+      parsed = JSON.parse(raw);
     } catch {
-      this.slides = [];
+      parsed = [];
     }
+
+    let backfilled = false;
+    this.slides = parsed.map((s) => {
+      if (s.id) return s as Slide;
+      backfilled = true;
+      return { ...s, id: genId() } as Slide;
+    });
+
+    if (backfilled) {
+      // syncSlides() only updates the local Stream — on this settings page,
+      // same as every other, nothing actually reaches the server until the
+      // admin clicks "Save". A silent id backfill can't wait for that: it's
+      // not a change the admin asked for or would think to save, so this
+      // calls the same save-settings endpoint the Submit button itself
+      // uses, directly, right away — otherwise the ids reset on every page
+      // load until someone happens to hit Save for an unrelated reason, and
+      // clicks recorded against a backfilled id that got regenerated next
+      // load orphan themselves.
+      const raw = JSON.stringify(this.slides);
+      this.setting('forumaker-magicslider.slides')(raw);
+      saveSettings({ 'forumaker-magicslider.slides': raw }).catch(() => {});
+    }
+
+    this.loadClicks();
   }
 
   className() {
     return 'MagicSliderSettingsPage';
   }
 
-  oncreate(vnode: any) {
-    const list = vnode.dom.querySelector('.MagicSlides-list') as HTMLElement | null;
-    if (!list) return;
-
-    let dragEl: HTMLElement | null = null;
-
-    list.addEventListener('dragstart', (e: any) => {
-      const t = (e.target as HTMLElement).closest('.MagicSlides-item') as HTMLElement | null;
-      if (!t) return;
-
-      dragEl = t;
-      e.dataTransfer.effectAllowed = 'move';
-      t.classList.add('is-dragging');
-    });
-
-    list.addEventListener('dragend', () => {
-      if (dragEl) dragEl.classList.remove('is-dragging');
-      dragEl = null;
-    });
-
-    list.addEventListener('dragover', (e) => {
-      e.preventDefault();
-
-      const over = (e.target as HTMLElement).closest('.MagicSlides-item') as HTMLElement | null;
-      if (!dragEl || !over || over === dragEl) return;
-
-      const rect = over.getBoundingClientRect();
-      const after = (e as MouseEvent).clientY - rect.top > rect.height / 2;
-
-      over.parentElement?.insertBefore(dragEl, after ? over.nextSibling : over);
-    });
-
-    list.addEventListener('drop', () => {
-      const newOrder: Slide[] = [];
-      const items = list.querySelectorAll('.MagicSlides-item');
-
-      items.forEach((el: any) => {
-        const i = Number(el.dataset.index);
-        const s = this.slides[i];
-        if (s) newOrder.push(s);
-      });
-
-      this.slides = newOrder;
-      this.syncSlides();
-    });
+  private loadClicks(): void {
+    app
+      .request<{ data?: Record<string, number> }>({
+        method: 'GET',
+        url: `${app.forum.attribute('apiUrl')}/forumaker/magicslider/clicks`,
+      })
+      .then((response) => {
+        this.clicks = response?.data ?? {};
+        m.redraw();
+      })
+      .catch(() => {});
   }
 
-  async uploadImage(file: File, slide: Slide, index: number) {
-    this.uploadingIndex = index;
+  private onDragStart(index: number, e: DragEvent) {
+    this.dragIndex = index;
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+  }
+
+  private onDragOver(index: number, e: DragEvent) {
+    e.preventDefault();
+
+    if (this.dragIndex === null || this.dragIndex === index) return;
+
+    const [moved] = this.slides.splice(this.dragIndex, 1);
+    this.slides.splice(index, 0, moved);
+    this.dragIndex = index;
+  }
+
+  private onDragEnd() {
+    if (this.dragIndex === null) return;
+
+    this.dragIndex = null;
+    this.syncSlides();
+  }
+
+  /** Matches exactly what UploadSlideImageController generates — the same check the delete endpoint itself makes server-side. */
+  private isOwnUpload(url: string): boolean {
+    return /\/assets\/magicslider\/[a-f0-9]{32}\.[a-z0-9]+$/i.test(url);
+  }
+
+  /**
+   * Best-effort cleanup for a file this extension previously uploaded —
+   * called after it's been replaced or its slide removed, so replaced/
+   * removed slide images don't just accumulate on disk forever. Never
+   * awaited by its caller and never surfaces an error: this runs after
+   * something else already succeeded (a new upload landed, a slide was
+   * deleted), so there's nothing left for the user to react to either way.
+   */
+  private deleteUploadedImage(url: string): void {
+    if (!this.isOwnUpload(url)) return;
+
+    app
+      .request({
+        method: 'DELETE',
+        url: `${app.forum.attribute('apiUrl')}/forumaker/magicslider/upload`,
+        body: { url },
+      })
+      .catch(() => {});
+  }
+
+  async uploadImage(file: File, slide: Slide) {
+    this.uploadingId = slide.id;
     m.redraw();
 
     try {
       const formData = new FormData();
       formData.append('image', file);
 
-      const apiUrl = ((app as any).data?.apiUrl || '/api').replace(/\/$/, '');
-
       const response = await app.request<{ data?: { url?: string } }>({
         method: 'POST',
-        url: `${apiUrl}/forumaker/magicslider/upload`,
+        url: `${app.forum.attribute('apiUrl')}/forumaker/magicslider/upload`,
         body: formData,
         serialize: (body: any) => body,
       });
@@ -96,15 +147,17 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
       const url = response?.data?.url;
 
       if (url) {
+        const previousImage = slide.image;
         slide.image = url;
         this.syncSlides();
+        if (previousImage) this.deleteUploadedImage(previousImage);
       } else {
         throw new Error('Upload completed but no URL returned');
       }
     } catch {
       app.alerts.show({ type: 'error' }, app.translator.trans('forumaker-magicslider.admin.settings.upload_error'));
     } finally {
-      this.uploadingIndex = null;
+      this.uploadingId = null;
       m.redraw();
     }
   }
@@ -259,14 +312,15 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
 
                 <div className="MagicSlides-list">
                   {this.slides.map((s, i) => (
-                    <div key={i} className="MagicSlides-item" data-index={i} draggable="true">
-                      <span
-                        className="MagicSlides-handle"
-                        title={app.translator.trans('forumaker-magicslider.admin.settings.drag')}
-                      >
-                        <i className="fas fa-grip-vertical" />
-                      </span>
-
+                    <div
+                      key={s.id}
+                      className={'MagicSlides-item' + (this.dragIndex === i ? ' is-dragging' : '')}
+                      title={app.translator.trans('forumaker-magicslider.admin.settings.drag') as string}
+                      draggable="true"
+                      ondragstart={(e: DragEvent) => this.onDragStart(i, e)}
+                      ondragover={(e: DragEvent) => this.onDragOver(i, e)}
+                      ondragend={() => this.onDragEnd()}
+                    >
                       <input
                         className="FormControl"
                         type="text"
@@ -279,28 +333,28 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                       />
 
                       <div className="MagicSlides-upload">
-                        <label className="Button">
-                          <i className="fas fa-upload" />
-                          <span>
-                            {this.uploadingIndex === i
-                              ? app.translator.trans('forumaker-magicslider.admin.settings.uploading')
-                              : app.translator.trans('forumaker-magicslider.admin.settings.upload')}
-                          </span>
+                        <Button
+                          className="Button"
+                          loading={this.uploadingId === s.id}
+                          onclick={() => (document.getElementById(`magicslider-upload-${s.id}`) as HTMLInputElement)?.click()}
+                        >
+                          <i className="fas fa-upload" /> {app.translator.trans('forumaker-magicslider.admin.settings.upload')}
+                        </Button>
 
-                          <input
-                            type="file"
-                            accept="image/*"
-                            disabled={this.uploadingIndex === i}
-                            onchange={(e: any) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                this.uploadImage(file, s, i);
-                              }
-                              e.target.value = '';
-                            }}
-                            style={{ display: 'none' }}
-                          />
-                        </label>
+                        <input
+                          id={`magicslider-upload-${s.id}`}
+                          type="file"
+                          accept="image/*"
+                          disabled={this.uploadingId === s.id}
+                          onchange={(e: any) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              this.uploadImage(file, s);
+                            }
+                            e.target.value = '';
+                          }}
+                          style={{ display: 'none' }}
+                        />
                       </div>
 
                       <input
@@ -314,22 +368,32 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                         }}
                       />
 
+                      <span
+                        className="MagicSlides-clicks"
+                        title={app.translator.trans('forumaker-magicslider.admin.settings.clicks') as string}
+                      >
+                        <i className="fas fa-mouse-pointer" /> {this.clicks[s.id] ?? 0}
+                      </span>
+
                       <Button
-                        className={'Button MagicSlides-toggle' + (s.newTab ? ' is-active' : '')}
+                        className={'Button Button--icon MagicSlides-toggle' + (s.newTab ? ' is-active' : '')}
+                        icon="fas fa-external-link-alt"
+                        title={app.translator.trans('forumaker-magicslider.admin.settings.new_tab') as string}
+                        aria-label={app.translator.trans('forumaker-magicslider.admin.settings.new_tab') as string}
                         onclick={() => {
                           s.newTab = !s.newTab;
                           this.syncSlides();
                         }}
-                      >
-                        <i className="fas fa-external-link-alt" />
-                        <span>{app.translator.trans('forumaker-magicslider.admin.settings.new_tab')}</span>
-                      </Button>
+                      />
 
                       <div className="MagicSlides-actions">
-                        <Button className="Button Button--danger" onclick={() => this.remove(i)}>
-                          <i className="fas fa-trash" />
-                          <span>{app.translator.trans('forumaker-magicslider.admin.settings.delete')}</span>
-                        </Button>
+                        <Button
+                          className="Button Button--icon Button--danger"
+                          icon="fas fa-trash"
+                          title={app.translator.trans('forumaker-magicslider.admin.settings.delete') as string}
+                          aria-label={app.translator.trans('forumaker-magicslider.admin.settings.delete') as string}
+                          onclick={() => this.remove(i)}
+                        />
                       </div>
                     </div>
                   ))}
@@ -345,14 +409,20 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
   }
 
   add() {
-    this.slides.push({ image: '', link: '', newTab: false });
+    this.slides.push({ id: genId(), image: '', link: '', newTab: false });
     this.syncSlides();
     setTimeout(() => m.redraw(), 0);
   }
 
   remove(i: number) {
-    this.slides.splice(i, 1);
+    // Native confirm(), same pattern used throughout Arena's admin for
+    // destructive actions — no dedicated confirm-modal component in this
+    // codebase, and this doesn't need one.
+    if (!confirm(app.translator.trans('forumaker-magicslider.admin.settings.confirm_delete') as string)) return;
+
+    const [removed] = this.slides.splice(i, 1);
     this.syncSlides();
+    if (removed?.image) this.deleteUploadedImage(removed.image);
   }
 
   syncSlides() {

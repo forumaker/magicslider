@@ -1,6 +1,7 @@
+import app from 'flarum/forum/app';
 import Component, { ComponentAttrs } from 'flarum/common/Component';
 
-type Slide = { image: string; link?: string; newTab?: boolean };
+type Slide = { id?: string; image: string; link?: string; newTab?: boolean };
 
 interface MagicSliderAttrs extends ComponentAttrs {
   slides: Slide[];
@@ -91,6 +92,25 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
     return hasLink ? `Open slide ${i + 1} of ${total}` : `Slide ${i + 1} of ${total}`;
   }
 
+  /**
+   * Best-effort, fire-and-forget — never blocks or delays the actual
+   * navigation the visitor just triggered by clicking the slide, and never
+   * surfaces an error if it fails (there's no UI here to show one in, and a
+   * missed click count isn't worth interrupting anything over).
+   */
+  private recordClick(id: string) {
+    if (!id) return;
+
+    app
+      .request({
+        method: 'POST',
+        url: `${app.forum.attribute('apiUrl')}/forumaker/magicslider/click`,
+        body: { id },
+        background: true,
+      })
+      .catch(() => {});
+  }
+
   private slideButtonLabel(i: number, active: boolean) {
     return active ? `Current slide ${i + 1}` : `Go to slide ${i + 1}`;
   }
@@ -156,6 +176,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
                     target={s.newTab ? '_blank' : '_self'}
                     rel={s.newTab ? 'noopener noreferrer' : undefined}
                     aria-label={label}
+                    onclick={() => s.id && this.recordClick(s.id)}
                   >
                     {image}
                   </a>

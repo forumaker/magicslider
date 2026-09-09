@@ -118,34 +118,53 @@
   gap: 10px;
 }
 
+// The whole row is the drag target (grab anywhere on it, same as Arena's
+// draggable deck cards — see .ArenaProfilePage-deckRowItem), not a small
+// dedicated handle icon. Inputs/buttons get their own cursor back below so
+// this doesn't turn text selection or clicking a button into "drag" — only
+// the empty space between them shows the grab cursor.
 .MagicSlides-item {
   display: grid;
-  grid-template-columns: 28px minmax(220px, 1fr) auto minmax(220px, 0.8fr) auto auto;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 0.8fr) auto auto auto;
   gap: 10px;
   align-items: center;
   background: var(--body-bg, #fff);
   border: 1px solid var(--control-bg, #e5e7eb);
   border-radius: 8px;
   padding: 10px;
+  cursor: grab;
+}
+
+.MagicSlides-item:active {
+  cursor: grabbing;
 }
 
 .MagicSlides-item.is-dragging {
   opacity: .6;
 }
 
-.MagicSlides-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  color: var(--muted-color, #6b7280);
-  width: 28px;
-  height: 40px;
-  user-select: none;
+.MagicSlides-item .FormControl,
+.MagicSlides-item .Button {
+  cursor: auto;
 }
 
 .MagicSlides-link {
   max-width: 520px;
+}
+
+.MagicSlides-clicks {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--control-bg, #e5e7eb);
+  color: var(--muted-color, #6b7280);
+  font-size: .85em;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: default;
 }
 
 .MagicSlides-upload {
@@ -155,9 +174,7 @@
   top: 3px;
 }
 
-.MagicSlides-upload .Button,
-.MagicSlides-toggle,
-.MagicSlides-actions .Button {
+.MagicSlides-upload .Button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -173,22 +190,7 @@
   box-sizing: border-box;
 }
 
-.MagicSlides-upload label.Button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
-  height: 40px;
-  min-height: 40px;
-  padding: 0 14px;
-  line-height: 1;
-  margin: 0;
-  box-sizing: border-box;
-}
-
-.MagicSlides-upload .Button i,
-.MagicSlides-toggle i,
-.MagicSlides-actions .Button i {
+.MagicSlides-upload .Button i {
   margin-right: 8px;
   display: inline-flex;
   align-items: center;
@@ -197,18 +199,27 @@
   flex: 0 0 auto;
 }
 
-.MagicSlides-upload .Button span,
-.MagicSlides-toggle span,
-.MagicSlides-actions .Button span {
-  display: inline-flex;
-  align-items: center;
-  line-height: 1;
-}
-
 .MagicSlides-upload .Button[disabled],
 .MagicSlides-upload .Button.is-disabled {
   opacity: .65;
   cursor: not-allowed;
+}
+
+// Icon-only (toggle "open in new tab" / delete) — square, no label, same
+// 40px row height as everything else in the row.
+.MagicSlides-toggle,
+.MagicSlides-actions .Button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  height: 40px;
+  width: 40px;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .MagicSlides-toggle {
@@ -228,14 +239,15 @@
 
 @media (max-width: 1200px) {
   .MagicSlides-item {
-    grid-template-columns: 28px minmax(220px, 1fr) auto;
+    grid-template-columns: minmax(220px, 1fr) auto;
   }
 
   .MagicSlides-item > .FormControl,
   .MagicSlides-item > .MagicSlides-upload,
+  .MagicSlides-item > .MagicSlides-clicks,
   .MagicSlides-item > .MagicSlides-toggle,
   .MagicSlides-item > .MagicSlides-actions {
-    grid-column: 2 / 4;
+    grid-column: 1 / 3;
   }
 
   .MagicSlides-actions {
@@ -253,23 +265,21 @@
     grid-column: auto !important;
   }
 
-  .MagicSlides-handle {
-    width: auto;
-    height: auto;
-    justify-content: flex-start;
-  }
-
   .MagicSlides-upload,
   .MagicSlides-actions {
     justify-content: flex-start;
   }
 
-  .MagicSlides-toggle,
-  .MagicSlides-upload .Button,
-  .MagicSlides-actions .Button,
-  .MagicSlides-upload label.Button {
+  .MagicSlides-upload .Button {
     width: 100%;
     justify-content: center;
+  }
+
+  // Icon-only buttons stay compact even on mobile — no label to center by
+  // stretching full-width.
+  .MagicSlides-toggle,
+  .MagicSlides-actions .Button {
+    width: 40px;
   }
 
   .MagicSliderSettingsPage input[type="text"],

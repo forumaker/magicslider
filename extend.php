@@ -3,9 +3,11 @@
 namespace forumaker\MagicSlider;
 
 use Flarum\Extend;
-use Flarum\Settings\SettingsRepositoryInterface;
+use forumaker\MagicSlider\Api\Controller\DeleteSlideImageController;
+use forumaker\MagicSlider\Api\Controller\GetSlideClicksController;
+use forumaker\MagicSlider\Api\Controller\RecordSlideClickController;
 use forumaker\MagicSlider\Api\Controller\UploadSlideImageController;
-use Psr\Log\LoggerInterface;
+use forumaker\MagicSlider\Frontend\PreloadSlideImage;
 
 return [
     new Extend\Locales(__DIR__ . '/resources/locale'),
@@ -13,41 +15,17 @@ return [
     (new Extend\Frontend('forum'))
         ->css(__DIR__ . '/resources/less/forum.less')
         ->js(__DIR__ . '/js/dist/forum.js')
-        ->preloads(function () {
-            $raw = resolve(SettingsRepositoryInterface::class)->get('forumaker-magicslider.slides', '[]');
-
-            try {
-                $slides = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-            } catch (\Throwable $e) {
-                resolve(LoggerInterface::class)->warning('[forumaker-magicslider] Failed to parse slides JSON: ' . $e->getMessage());
-                return [];
-            }
-
-            if (!is_array($slides)) {
-                return [];
-            }
-
-            foreach ($slides as $slide) {
-                $image = trim((string) ($slide['image'] ?? ''));
-
-                if ($image !== '') {
-                    return [[
-                        'href' => $image,
-                        'as' => 'image',
-                        'fetchpriority' => 'high',
-                    ]];
-                }
-            }
-
-            return [];
-        }),
+        ->content(PreloadSlideImage::class, 110),
 
     (new Extend\Frontend('admin'))
         ->css(__DIR__ . '/resources/less/admin.less')
         ->js(__DIR__ . '/js/dist/admin.js'),
 
     (new Extend\Routes('api'))
-        ->post('/forumaker/magicslider/upload', 'forumaker.magicslider.upload', UploadSlideImageController::class),
+        ->post('/forumaker/magicslider/upload', 'forumaker.magicslider.upload', UploadSlideImageController::class)
+        ->delete('/forumaker/magicslider/upload', 'forumaker.magicslider.upload.delete', DeleteSlideImageController::class)
+        ->post('/forumaker/magicslider/click', 'forumaker.magicslider.click', RecordSlideClickController::class)
+        ->get('/forumaker/magicslider/clicks', 'forumaker.magicslider.clicks', GetSlideClicksController::class),
 
     (new Extend\Settings())
         ->default('forumaker-magicslider.slides', '[]')

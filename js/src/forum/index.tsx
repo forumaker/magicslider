@@ -6,7 +6,7 @@ import WelcomeHero from 'flarum/forum/components/WelcomeHero';
 
 import MagicSlider from './components/MagicSlider';
 
-type Slide = { image: string; link?: string; newTab?: boolean | string };
+type Slide = { id?: string; image: string; link?: string; newTab?: boolean | string };
 
 function isTrue(v: unknown): boolean {
   return v === true || v === 1 || v === '1' || v === 'true';
@@ -62,6 +62,7 @@ function buildSlider() {
   const norm = slides
     .filter((s) => s && s.image)
     .map((s) => ({
+      id: s.id || '',
       image: s.image || '',
       link: s.link || '',
       newTab: s.newTab === true || s.newTab === 'true',
