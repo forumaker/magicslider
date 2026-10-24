@@ -1,5 +1,6 @@
 import app from 'flarum/forum/app';
 import { override } from 'flarum/common/extend';
+import type Mithril from 'mithril';
 
 import IndexPage from 'flarum/forum/components/IndexPage';
 import WelcomeHero from 'flarum/forum/components/WelcomeHero';
@@ -19,11 +20,7 @@ function getBool(key: string): boolean {
 }
 
 function isMobileViewport(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    !!window.matchMedia &&
-    window.matchMedia('(max-width: 768px)').matches
-  );
+  return typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
 }
 
 function isSingleTagPage(): boolean {
@@ -104,7 +101,7 @@ function replaceHero(original: () => Mithril.Children) {
 
 app.initializers.add('forumaker-magicslider', () => {
   try {
-    app.forum.on('refresh', () => m.redraw());
+    (app.forum as any).on('refresh', () => m.redraw());
   } catch {}
 
   override(IndexPage.prototype, 'hero', function (original: any) {

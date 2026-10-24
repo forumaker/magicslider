@@ -19,10 +19,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
   private index = 0;
   private interval?: number;
   private touchStartX: number | null = null;
-  private isMobile =
-    typeof window !== 'undefined' &&
-    !!window.matchMedia &&
-    window.matchMedia('(max-width: 768px)').matches;
+  private isMobile = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
   private mq?: MediaQueryList;
   private mqHandler?: (e: MediaQueryListEvent) => void;
 
@@ -43,9 +40,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
         m.redraw();
       };
 
-      this.mq.addEventListener
-        ? this.mq.addEventListener('change', this.mqHandler)
-        : this.mq.addListener(this.mqHandler);
+      this.mq.addEventListener ? this.mq.addEventListener('change', this.mqHandler) : this.mq.addListener(this.mqHandler);
     }
   }
 
@@ -56,9 +51,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
     }
 
     if (this.mq && this.mqHandler) {
-      this.mq.removeEventListener
-        ? this.mq.removeEventListener('change', this.mqHandler)
-        : this.mq.removeListener(this.mqHandler);
+      this.mq.removeEventListener ? this.mq.removeEventListener('change', this.mqHandler) : this.mq.removeListener(this.mqHandler);
 
       this.mqHandler = undefined;
     }
@@ -116,15 +109,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
   }
 
   private viewInner(vnode: any) {
-    const {
-      slides,
-      heightDesktop,
-      heightMobile,
-      paddingDesktop,
-      paddingMobile,
-      radiusDesktop,
-      radiusMobile,
-    } = vnode.attrs;
+    const { slides, heightDesktop, heightMobile, paddingDesktop, paddingMobile, radiusDesktop, radiusMobile } = vnode.attrs;
 
     if (!slides.length) return null;
 
@@ -222,7 +207,7 @@ export default class MagicSlider extends Component<MagicSliderAttrs> {
               </button>
 
               <div className="MagicSlider-dots" aria-label="Slider pagination">
-                {slides.map((_, i) => {
+                {slides.map((_: unknown, i: number) => {
                   const isActive = this.index === i;
 
                   return (

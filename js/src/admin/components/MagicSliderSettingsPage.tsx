@@ -202,17 +202,12 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
 
               <div className="Form-group">
                 <div>
-                  <Switch
-                    state={disableDesktop}
-                    onchange={(v: boolean) => this.setting('forumaker-magicslider.disable_desktop')(v ? '1' : '0')}
-                  >
+                  <Switch state={disableDesktop} onchange={(v: boolean) => this.setting('forumaker-magicslider.disable_desktop')(v ? '1' : '0')}>
                     {app.translator.trans('forumaker-magicslider.admin.settings.disable_desktop')}
                   </Switch>
                 </div>
 
-                <p className="helpText">
-                  {app.translator.trans('forumaker-magicslider.admin.settings.disable_desktop_help')}
-                </p>
+                <p className="helpText">{app.translator.trans('forumaker-magicslider.admin.settings.disable_desktop_help')}</p>
               </div>
             </div>
           </section>
@@ -250,17 +245,12 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
 
               <div className="Form-group">
                 <div>
-                  <Switch
-                    state={disableMobile}
-                    onchange={(v: boolean) => this.setting('forumaker-magicslider.disable_mobile')(v ? '1' : '0')}
-                  >
+                  <Switch state={disableMobile} onchange={(v: boolean) => this.setting('forumaker-magicslider.disable_mobile')(v ? '1' : '0')}>
                     {app.translator.trans('forumaker-magicslider.admin.settings.disable_mobile')}
                   </Switch>
                 </div>
 
-                <p className="helpText">
-                  {app.translator.trans('forumaker-magicslider.admin.settings.disable_mobile_help')}
-                </p>
+                <p className="helpText">{app.translator.trans('forumaker-magicslider.admin.settings.disable_mobile_help')}</p>
               </div>
             </div>
           </section>
@@ -368,10 +358,7 @@ export default class MagicSliderSettingsPage extends ExtensionPage {
                         }}
                       />
 
-                      <span
-                        className="MagicSlides-clicks"
-                        title={app.translator.trans('forumaker-magicslider.admin.settings.clicks') as string}
-                      >
+                      <span className="MagicSlides-clicks" title={app.translator.trans('forumaker-magicslider.admin.settings.clicks') as string}>
                         <i className="fas fa-mouse-pointer" /> {this.clicks[s.id] ?? 0}
                       </span>
 
